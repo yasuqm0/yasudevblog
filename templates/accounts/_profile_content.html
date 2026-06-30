@@ -1,0 +1,56 @@
+{% load emoji_tags %}
+
+<div class="profile-box">
+    <div class="profile-avatar">
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="avatar">
+        {% else %}
+            <div class="avatar-placeholder">{{ profile.user.username|slice:":2"|upper }}</div>
+        {% endif %}
+    </div>
+    <div class="profile-info">
+        <div class="profile-username">
+            {{ profile.user.username }}
+            {% if user == profile.user %}
+                <a href="{% url 'edit_profile' %}" class="profile-edit-label" style="font-size: var(--fs-10);">[editar]</a>
+                <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 4px;">
+                    {% csrf_token %}
+                    <button type="submit" class="profile-edit-label" style="font-size: var(--fs-10); background: none; border: none; cursor: pointer; padding: 0;">[salir]</button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="profile-bio">{% if profile.bio %}{{ profile.bio }}{% else %}<span class="text-dim">// sin bio todavía.</span>{% endif %}</div>
+    </div>
+</div>
+
+<div class="section-header" style="margin-top: 28px;">logros desbloqueados</div>
+{% if unlocked %}
+    <div class="achievements-grid">
+        {% for pa in unlocked %}
+        <div class="achievement-card">
+            <div class="achievement-name">{{ pa.achievement.name }}</div>
+            <div class="achievement-game">{{ pa.achievement.game.title }}</div>
+            <div class="achievement-reward">💿 {{ pa.achievement.disc_reward }}</div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-dim">// ningún logro desbloqueado todavía.</p>
+{% endif %}
+
+<div class="section-header" style="margin-top: 28px;">comentarios recientes</div>
+{% if comments %}
+    {% for comment in comments %}
+    <div class="comment-card">
+        <div class="comment-header">
+            <div>
+                <span class="comment-author">en: <a href="{% url 'post_detail' comment.post.slug %}">{{ comment.post.title }}</a></span>
+                <span class="comment-date">{{ comment.created_at|date:"d.m.Y" }}</span>
+            </div>
+        </div>
+        <p class="comment-content">{{ comment.content|render_emojis }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="text-dim">// sin comentarios todavía.</p>
+{% endif %}

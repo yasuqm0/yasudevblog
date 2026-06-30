@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Sobre mí — Yasudevblog{% endblock %}
+{% block content %}
+
+<div class="section-header">sobre mí</div>
+
+<div class="about-box">
+    <div class="about-title">Hola, soy yasu</div>
+    {% if page %}
+        <div class="about-content">{{ page.content|linebreaks }}</div>
+    {% else %}
+        <p class="about-content">
+            Estudiante de Desarrollo de software, dibujante, entre otras cosas. <br>
+            <br>
+            Mis redes sociales: <br>
+            <h4>➤ Usuario de discord: its_yasu</h4>
+        </p>
+    {% endif %}
+</div>
+
+{% endblock %}

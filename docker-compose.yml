@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:15
+    container_name: yasudevblog_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: yasudevblog
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

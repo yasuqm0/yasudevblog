@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Registro — Yasudevblog{% endblock %}
+{% block content %}
+
+<div class="section-header">registro</div>
+
+<div class="form-box">
+    <div class="form-title">// crear cuenta</div>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-field">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+                <p class="form-help">{{ field.help_text }}</p>
+            {% endif %}
+            {% if field.errors %}
+                <p class="form-error">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="form-footer">
+            <button type="submit" class="btn">registrarse →</button>
+            <span class="text-dim">// ¿ya tienes cuenta? <a href="{% url 'login' %}">inicia sesión</a></span>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

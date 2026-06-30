@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Buscasemillas — Daffodil's Garden{% endblock %}
+
+{% block content %}
+<div class="buscasemillas-wrapper">
+  <canvas id="buscasemillas-canvas"></canvas>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'games/js/buscasemillas.js' %}"></script>
+{% endblock %}

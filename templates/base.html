@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yasudevblog{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'img/yasudevicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now "U" %}">
+</head>
+<body>
+    <header>
+        <button class="menu-toggle" id="menu-toggle">☰</button>
+        <h1><a href="{% url 'index' %}">YASUDEVBLOG</a></h1>
+        <div class="header-user">
+            {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="header-username">{{ user.username }}</a>
+                <a href="{% url 'profile' %}" class="header-avatar">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="avatar">
+                    {% else %}
+                        <span class="avatar-placeholder-sm">{{ user.username|slice:":2"|upper }}</span>
+                    {% endif %}
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}">login</a>
+                <a href="{% url 'register' %}">registro</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="marquee-bar">
+        <p>★ Bienvenid@ a mi cueva &nbsp;&nbsp;&nbsp; ✦ Todavia no puse juegos pero pronto lo haré &nbsp;&nbsp;&nbsp; ★ 'Cause a heartbreaker starts with a broken heart !!! &nbsp;&nbsp;&nbsp; ✦ when haces tus momos en tu marquee bar &nbsp;&nbsp;&nbsp; ★ oigan escuchen: Cometa a la Deriva, recomendadas sus canciones, están en Spotify &nbsp;&nbsp;&nbsp; ✦ la neta camioneta puse todas estas vainas nomas pq me aburri y pa rellenar, ola &nbsp;&nbsp;&nbsp; ★ Tekueme si lees esto &nbsp;&nbsp;&nbsp;</p>
+    </div>
+
+    <div class="wrapper">
+        <aside class="sidebar">
+            {% if user.is_authenticated %}
+            <div class="sidebar-section">
+                <div class="disc-box">
+                    <span class="disc-label">Tus discos:</span>
+                    <span class="disc-count">{{ user.profile.discs|stringformat:"03d" }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="sidebar-section">
+                <div class="sidebar-label">navegación</div>
+                <a href="{% url 'index' %}" class="sidebar-item">// inicio</a>
+                <a href="{% url 'post_list' %}" class="sidebar-item">// blog</a>
+                <a href="{% url 'game_list' %}" class="sidebar-item">// juegos</a>
+                <a href="{% url 'entry_list' %}" class="sidebar-item">// entradas</a>
+                <a href="{% url 'payment_store' %}" class="sidebar-item">// tienda</a>
+                <a href="{% url 'about' %}" class="sidebar-item">// sobre mí</a>
+            </div>
+
+            {% block sidebar_extra %}{% endblock %}
+        </aside>
+
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <footer>
+        <p>yasudevblog.lat © 2026 &nbsp;·&nbsp; dea que tiraba</p>
+        <div class="footer-gifs">
+            {% block footer_gifs %}{% endblock %}
+        </div>
+    </footer>
+    <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

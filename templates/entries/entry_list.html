@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Entries — Yasudevblog{% endblock %}
+{% block content %}
+
+<div class="section-header">entries</div>
+
+<p class="text-dim" style="margin-bottom: 20px;">// Rincón de experimentos y sonseras, algunos solo aparecen a cierta hora.</p>
+
+{% if entries %}
+    <div class="entries-grid">
+        {% for entry in entries %}
+        <a href="{% url 'entry_detail' entry.slug %}" class="entry-card">
+            <div class="entry-title">{{ entry.title }}</div>
+            <div class="entry-date">{{ entry.created_at|date:"d.m.Y" }}</div>
+        </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-dim">// nada por aquí todavía.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Login — Yasudevblog{% endblock %}
+{% block content %}
+
+<div class="section-header">login</div>
+
+<div class="form-box">
+    <div class="form-title">// bienvenido de vuelta</div>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-field">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <p class="form-error">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="form-footer">
+            <button type="submit" class="btn">entrar →</button>
+            <span class="text-dim">// ¿no tienes cuenta? <a href="{% url 'register' %}">regístrate</a></span>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

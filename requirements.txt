@@ -1,0 +1,9 @@
+django>=4.2
+gunicorn
+psycopg2-binary
+dj-database-url
+Pillow
+djangorestframework
+django-cors-headers
+django-extensions
+requests==2.32.3

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Editar perfil{% endblock %}
+{% block content %}
+
+<div class="section-header">editar perfil</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for field in form %}
+    <div style="margin-bottom: 14px;">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+            <p class="text-accent" style="font-size: 11px; margin-top: 4px;">{{ field.errors.0 }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn">guardar →</button>
+    <a href="{% url 'profile' %}" class="btn" style="margin-left: 8px;">cancelar</a>
+    <a href="{% url 'logout' %}" class="btn" style="margin-left: 8px;">cerrar sesión</a>
+</form>
+
+{% endblock %}

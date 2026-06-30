@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Tienda de discos · Yasudevblog{% endblock %}
+
+{% block content %}
+<div class="section-header">tienda de discos</div>
+
+<div class="shop-intro card-box">
+    <h2 class="shop-title">Comprar discos</h2>
+    <p class="shop-text">
+        Elige un paquete para recargar tu cuenta. Por ahora los discos solo se acumulan en tu perfil.
+    </p>
+</div>
+
+<div class="shop-grid">
+    {% for pack_key, pack in payment_packs.items %}
+    <article class="shop-pack card-box">
+        <div class="shop-pack-top">
+            <span class="shop-pack-name">{{ pack.name }}</span>
+            <span class="shop-pack-discs">{{ pack.discs }} discos</span>
+        </div>
+
+        <div class="shop-pack-price">
+            S/ {{ pack.amount|floatformat:"-2"|slice:":-2" }}
+        </div>
+
+        <button class="btn shop-buy-btn" data-pack="{{ pack_key }}">
+            comprar
+        </button>
+    </article>
+    {% endfor %}
+</div>
+
+<div id="shop-message" class="shop-message"></div>
+
+{% if simulation_enabled %}
+<div class="shop-demo-note">
+    modo demo activo: si Culqi no está configurado, se podrá simular el pago.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.culqi.com/checkout-js"></script>
+<script>
+    const simulationEnabled = "{{ simulation_enabled|yesno:'true,false' }}" === "true";
+    const shopMessage = document.getElementById("shop-message");
+
+    let activeTransactionId = null;
+    let activeButton = null;
+    let activeCheckout = null;
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    function showShopMessage(text, type = "info") {
+        shopMessage.textContent = text;
+        shopMessage.className = `shop-message ${type}`;
+    }
+
+    function setButtonsDisabled(disabled) {
+        document.querySelectorAll(".shop-buy-btn").forEach((button) => {
+            button.disabled = disabled;
+        });
+    }
+
+    async function createTransaction(pack) {
+        const response = await fetch("/api/payments/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({ pack }),
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudo iniciar la compra.");
+        }
+
+        return response.json();
+    }
+
+    async function confirmTransaction(transactionId, token) {
+        const response = await fetch("/api/payments/confirm/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({
+                transaction_id: transactionId,
+                token: token,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.detail || "El pago fue rechazado.");
+        }
+
+        return data;
+    }
+
+    async function simulateTransaction(transactionId) {
+        const response = await fetch("/api/payments/simulate/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({ transaction_id: transactionId }),
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudo simular el pago.");
+        }
+
+        return response.json();
+    }
+
+    function openCulqiCheckout(data) {
+        const publicKey = data.culqi.public_key;
+
+        const settings = {
+            ...data.culqi.settings,
+        };
+
+        const client = {
+            email: data.culqi.client.email || "",
+        };
+
+        const paymentMethods = {
+            tarjeta: true,
+            yape: false,
+            billetera: false,
+            bancaMovil: false,
+            agente: false,
+            cuotealo: false,
+        };
+
+        const options = {
+            lang: "es",
+            installments: false,
+            modal: true,
+            paymentMethods: paymentMethods,
+            paymentMethodsSort: Object.keys(paymentMethods),
+        };
+
+        const appearance = {
+            theme: "default",
+            hiddenCulqiLogo: false,
+            hiddenBannerContent: false,
+            hiddenBanner: false,
+            hiddenToolBarAmount: false,
+            hiddenEmail: false,
+            menuType: "sidebar",
+            buttonCardPayText: "Pagar",
+            defaultStyle: {
+                bannerColor: "#0a0a0a",
+                buttonBackground: "#f700ff",
+                menuColor: "#00fbff",
+                linksColor: "#00ff0d",
+                buttonTextColor: "#ffffff",
+                priceColor: "#f9ec34",
+            },
+            variables: {
+                fontFamily: "monospace",
+                colorBackground: "#0e0e0e",
+                colorPrimary: "#f700ff",
+                colorPrimaryText: "#ffffff",
+                colorText: "#ffffff",
+                colorTextSecondary: "#bbbbbb",
+                colorTextPlaceholder: "#676767",
+            },
+        };
+
+        activeCheckout = new CulqiCheckout(publicKey, {
+            settings,
+            client,
+            options,
+            appearance,
+        });
+
+        activeCheckout.culqi = async function () {
+            if (activeCheckout.token) {
+                const token = activeCheckout.token.id;
+                activeCheckout.close();
+                showShopMessage("Procesando pago...");
+
+                try {
+                    await confirmTransaction(activeTransactionId, token);
+                    showShopMessage("Pago completado. Actualizando tus discos...", "success");
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+                } catch (error) {
+                    showShopMessage(error.message, "error");
+                    setButtonsDisabled(false);
+                }
+
+                return;
+            }
+
+            if (activeCheckout.error) {
+                showShopMessage(activeCheckout.error.user_message || "Culqi rechazó la operación.", "error");
+                setButtonsDisabled(false);
+            }
+        };
+
+        activeCheckout.open();
+    }
+
+    document.querySelectorAll(".shop-buy-btn").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const pack = button.dataset.pack;
+
+            activeButton = button;
+            setButtonsDisabled(true);
+            showShopMessage("Preparando compra...");
+
+            try {
+                const data = await createTransaction(pack);
+                const transaction = data.transaction;
+
+                activeTransactionId = transaction.id;
+
+                if (data.culqi.public_key) {
+                    showShopMessage("Abriendo pasarela de pago...");
+                    openCulqiCheckout(data);
+                    return;
+                }
+
+                if (simulationEnabled) {
+                    showShopMessage("Culqi no está configurado. Simulando pago...");
+                    await simulateTransaction(transaction.id);
+                    showShopMessage("Pago simulado completado. Actualizando tus discos...", "success");
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+
+                    return;
+                }
+
+                throw new Error("Falta configurar la llave pública de Culqi.");
+            } catch (error) {
+                showShopMessage(error.message, "error");
+                setButtonsDisabled(false);
+            }
+        });
+    });
+</script>
+{% endblock %}

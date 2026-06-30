@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+
+<div class="section-header">bienvenido</div>
+
+<div class="welcome-box">
+    <div class="welcome-title">Hola, soy Yasu!</div>
+    <p class="welcome-text">
+        Intenté hacer una introducción corta a la página pero no me salió, así que denle a "Sobre mí" para más info de donde están xd.
+    </p>
+    <div class="welcome-links">
+        <a href="{% url 'about' %}" class="btn">Sobre mí →</a>
+        <a href="{% url 'post_list' %}" class="btn">Ver el blog →</a>
+    </div>
+</div>
+
+<div class="section-header" style="margin-top: 28px;">➤ Posts recientes</div>
+
+{% if recent_posts %}
+    {% for post in recent_posts %}
+    <div class="post-card">
+        <h3><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h3>
+        <div class="post-meta">{{ post.created_at|date:"d.m.Y" }}</div>
+        <p class="post-excerpt">{{ post.content|truncatewords:30 }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="text-dim">// Por el momento no hay nada por aquí, pero quizas pronto si... :b</p>
+{% endif %}
+
+<div class="section-header" style="margin-top: 28px;">➤ Juegos disponibles</div>
+
+{% if featured_games %}
+    <div class="games-grid">
+        {% for game in featured_games %}
+        <a href="{% url 'game_detail' game.slug %}" class="game-card">
+            <div class="game-title">{{ game.title }}</div>
+            <div class="game-desc">{{ game.description|truncatewords:12 }}</div>
+        </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-dim">// Los juegos están en desarrollo todavia, al menos hasta que deje de procrastinar y termine mis trabajos. Vuelve pronto !!</p>
+{% endif %}
+
+{% endblock %}

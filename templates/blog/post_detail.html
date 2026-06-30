@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load emoji_tags %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+
+<div class="post-full">
+    <h2 class="post-full-title">{{ post.title }}</h2>
+    <div class="post-meta">{{ post.created_at|date:"d.m.Y" }}</div>
+
+    {% if post.image %}
+    <div class="post-image">
+        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+    </div>
+    {% endif %}
+
+    <div class="post-content">
+        {{ post.content|linebreaks }}
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="section-header" style="margin-top: 20px;">dejar comentario</div>
+<form method="post" id="comment-form">
+    {% csrf_token %}
+    <div class="comment-input-wrapper">
+        <textarea name="content" id="comment-input" rows="4" placeholder="Escribe algo... para poner emojis usa :nombre: o presiona el boton con emoji en la esquina de la caja de comentario"></textarea>
+        <button type="button" id="emoji-btn" class="emoji-toggle-btn">😎</button>
+    </div>
+
+    <div id="emoji-picker" class="emoji-picker hidden">
+        <div class="emoji-picker-tabs">
+            {% for pack in emoji_packs %}
+            <button type="button" class="emoji-tab" data-pack="{{ pack.id }}">{{ pack.name }}</button>
+            {% endfor %}
+        </div>
+        <div class="emoji-picker-body">
+            {% for pack in emoji_packs %}
+            <div class="emoji-pack" id="pack-{{ pack.id }}">
+                {% for emoji in pack.emojis.all %}
+                <button type="button" class="emoji-item" data-name="{{ emoji.name }}" title=":{{ emoji.name }}:">
+                    <img src="{{ emoji.image.url }}" alt=":{{ emoji.name }}:">
+                </button>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <button type="submit" class="btn" style="margin-top: 8px;">enviar →</button>
+</form>
+{% else %}
+    <p class="text-dim" style="margin-top: 12px;">// <a href="{% url 'login' %}">inicia sesión</a> para comentar.</p>
+{% endif %}
+
+<div class="section-header" style="margin-top: 28px;">comentarios</div>
+
+{% if comments %}
+    {% for comment in comments %}
+    <div class="comment-card">
+        <div class="comment-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a href="{% url 'public_profile' comment.author.username %}">
+                    {% if comment.author.profile.avatar %}
+                        <img src="{{ comment.author.profile.avatar.url }}" class="comment-avatar">
+                    {% else %}
+                        <div class="comment-avatar-placeholder">{{ comment.author.username|slice:":2"|upper }}</div>
+                    {% endif %}
+                </a>
+                <div>
+                    <a href="{% url 'public_profile' comment.author.username %}" class="comment-author">{{ comment.author.username }}</a>
+                    <span class="comment-date">{{ comment.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+            <div class="comment-actions">
+                {% if user.is_authenticated %}
+                <a href="{% url 'vote_comment' post.slug comment.id 'like' %}" class="vote-btn like-btn {% if comment.user_vote == 1 %}active{% endif %}">
+                    ▲ {{ comment.likes }}
+                </a>
+                <a href="{% url 'vote_comment' post.slug comment.id 'dislike' %}" class="vote-btn dislike dislike-btn {% if comment.user_vote == -1 %}active-dislike{% endif %}">
+                    ▼ {{ comment.dislikes }}
+                </a>
+                {% else %}
+                <span class="vote-display">▲ {{ comment.likes }}</span>
+                <span class="vote-display">▼ {{ comment.dislikes }}</span>
+                {% endif %}
+                {% if user == comment.author %}
+                <a href="{% url 'delete_comment' post.slug comment.id %}" class="delete-btn" onclick="return confirm('¿Eliminar este comentario?')">✕</a>
+                {% endif %}
+            </div>
+        </div>
+        <p class="comment-content">{{ comment.content|render_emojis }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="text-dim">// sin comentarios todavía.</p>
+{% endif %}
+
+<script>
+document.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.href;
+        const commentCard = this.closest('.comment-card');
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const likeBtn = commentCard.querySelector('.vote-btn.like-btn');
+            const dislikeBtn = commentCard.querySelector('.vote-btn.dislike-btn');
+
+            likeBtn.textContent = '▲ ' + data.likes;
+            dislikeBtn.textContent = '▼ ' + data.dislikes;
+
+            likeBtn.classList.remove('active');
+            dislikeBtn.classList.remove('active-dislike');
+
+            if (data.user_vote === 1) likeBtn.classList.add('active');
+            if (data.user_vote === -1) dislikeBtn.classList.add('active-dislike');
+        });
+    });
+});
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+const commentInput = document.getElementById('comment-input');
+const emojiTabs = document.querySelectorAll('.emoji-tab');
+const emojiPacks = document.querySelectorAll('.emoji-pack');
+
+emojiBtn.addEventListener('click', () => {
+    emojiPicker.classList.toggle('hidden');
+    if (!emojiPicker.classList.contains('hidden')) {
+        const firstTab = document.querySelector('.emoji-tab');
+        if (firstTab) firstTab.click();
+    }
+});
+
+emojiTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        emojiTabs.forEach(t => t.classList.remove('active'));
+        emojiPacks.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('pack-' + tab.dataset.pack).classList.add('active');
+    });
+});
+
+document.querySelectorAll('.emoji-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const name = btn.dataset.name;
+        const pos = commentInput.selectionStart;
+        const text = commentInput.value;
+        commentInput.value = text.slice(0, pos) + ':' + name + ':' + text.slice(pos);
+        commentInput.focus();
+        commentInput.selectionStart = commentInput.selectionEnd = pos + name.length + 2;
+        emojiPicker.classList.add('hidden');
+    });
+});
+
+document.addEventListener('click', (e) => {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        emojiPicker.classList.add('hidden');
+    }
+});
+</script>
+
+{% endblock %}

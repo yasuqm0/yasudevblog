@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{ game.title }}{% endblock %}
+{% block content %}
+<h2>{{ game.title }}</h2>
+<p>{{ game.description }}</p>
+<h3>Logros</h3>
+{% for achievement in achievements %}
+    <p>
+        {{ achievement.name }} — 💿 {{ achievement.disc_reward }}
+        {% if achievement.id in unlocked %}✅{% endif %}
+    </p>
+{% endfor %}
+{% endblock %}
