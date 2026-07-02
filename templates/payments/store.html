@@ -33,6 +33,32 @@
 
 <div id="shop-message" class="shop-message"></div>
 
+<div id="simulation-modal" class="simulation-modal-overlay" style="display: none;">
+    <div class="simulation-modal-box card-box">
+        <div class="simulation-modal-header">
+            <span>YasuDevBlog · Pago simulado</span>
+            <button id="simulation-modal-close" class="simulation-modal-close">&times;</button>
+        </div>
+
+        <div class="simulation-modal-body">
+            <p class="simulation-modal-warning">
+                ⚠️ Modo demo: la pasarela de pago real (Culqi) no está disponible porque requiere RUC.
+                Este flujo simula la confirmación de un pago real para fines de evaluación del proyecto.
+            </p>
+
+            <div class="simulation-modal-summary">
+                <p><strong>Pack:</strong> <span id="sim-pack-name"></span></p>
+                <p><strong>Discos:</strong> <span id="sim-pack-discs"></span></p>
+                <p><strong>Total:</strong> S/ <span id="sim-pack-amount"></span></p>
+            </div>
+
+            <button id="simulation-modal-confirm" class="btn simulation-confirm-btn">
+                Confirmar pago simulado
+            </button>
+        </div>
+    </div>
+</div>
+
 {% if simulation_enabled %}
 <div class="shop-demo-note">
     modo demo activo: si Culqi no está configurado, se podrá simular el pago.
@@ -216,6 +242,55 @@
         activeCheckout.open();
     }
 
+    const simulationModal = document.getElementById("simulation-modal");
+    const simulationConfirmBtn = document.getElementById("simulation-modal-confirm");
+    const simulationCloseBtn = document.getElementById("simulation-modal-close");
+
+    let pendingTransaction = null;
+    let pendingButton = null;
+
+    function openSimulationModal(transaction, button) {
+        pendingTransaction = transaction;
+        pendingButton = button;
+
+        document.getElementById("sim-pack-name").textContent = transaction.pack;
+        document.getElementById("sim-pack-discs").textContent = transaction.discs_purchased;
+        document.getElementById("sim-pack-amount").textContent = transaction.amount_soles;
+
+        simulationModal.style.display = "flex";
+    }
+
+    function closeSimulationModal() {
+        simulationModal.style.display = "none";
+        pendingTransaction = null;
+        pendingButton = null;
+        setButtonsDisabled(false);
+    }
+
+    simulationCloseBtn.addEventListener("click", closeSimulationModal);
+
+    simulationConfirmBtn.addEventListener("click", async () => {
+        if (!pendingTransaction) return;
+
+        simulationConfirmBtn.disabled = true;
+        simulationConfirmBtn.textContent = "Procesando...";
+
+        try {
+            await simulateTransaction(pendingTransaction.id);
+            simulationModal.style.display = "none";
+            showShopMessage("Pago simulado completado. Actualizando tus discos...", "success");
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1200);
+        } catch (error) {
+            showShopMessage(error.message, "error");
+            simulationConfirmBtn.disabled = false;
+            simulationConfirmBtn.textContent = "Confirmar pago simulado";
+            closeSimulationModal();
+        }
+    });
+
     document.querySelectorAll(".shop-buy-btn").forEach((button) => {
         button.addEventListener("click", async () => {
             const pack = button.dataset.pack;
@@ -237,14 +312,8 @@
                 }
 
                 if (simulationEnabled) {
-                    showShopMessage("Culqi no está configurado. Simulando pago...");
-                    await simulateTransaction(transaction.id);
-                    showShopMessage("Pago simulado completado. Actualizando tus discos...", "success");
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1200);
-
+                    showShopMessage("");
+                    openSimulationModal(transaction, button);
                     return;
                 }
 

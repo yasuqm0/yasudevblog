@@ -1157,3 +1157,73 @@ form button:hover,
     font-size: var(--fs-12);
     color: var(--text-dim);
 }
+
+/* ===== SIMULATION MODAL ===== */
+.simulation-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.simulation-modal-box {
+    max-width: 420px;
+    width: 90%;
+    padding: var(--space-9) var(--space-10);
+}
+
+.simulation-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-7);
+}
+
+.simulation-modal-header span {
+    font-family: var(--font-display);
+    font-size: var(--fs-18);
+    color: var(--accent-bright);
+}
+
+.simulation-modal-close {
+    background: transparent;
+    border: 1px solid var(--border-mid);
+    color: var(--text-secondary);
+    font-size: var(--fs-16);
+    line-height: 1;
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.simulation-modal-close:hover {
+    border-color: var(--accent);
+    color: var(--accent-bright);
+}
+
+.simulation-modal-warning {
+    font-size: var(--fs-12);
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: var(--space-8);
+    border-left: 2px solid var(--accent-dim);
+    padding-left: var(--space-6);
+}
+
+.simulation-modal-summary {
+    font-size: var(--fs-15);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-9);
+}
+
+.simulation-modal-summary p {
+    margin-bottom: var(--space-3);
+}
+
+.simulation-modal-summary strong {
+    color: var(--text-primary);
+}
