@@ -1,0 +1,23 @@
+# Entornos y secretos
+.env
+*.env
+!.env.example
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+backend/staticfiles/
+backend/media/
+
+# Node / React
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Traefik (certificados, nunca a Git)
+traefik/acme.json
+
+# Editor / OS
+.vscode/
+.DS_Store

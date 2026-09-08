@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: yasudevblog-db
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  backend:
+    build: ./backend
+    container_name: yasudevblog-backend
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    networks:
+      - internal
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blog-api.rule=Host(`api.yasudevblog.lat`)"
+      - "traefik.http.routers.blog-api.entrypoints=websecure"
+      - "traefik.http.routers.blog-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.blog-api.loadbalancer.server.port=8000"
+
+  frontend:
+    build: ./frontend
+    container_name: yasudevblog-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blog-web.rule=Host(`yasudevblog.lat`) || Host(`www.yasudevblog.lat`)"
+      - "traefik.http.routers.blog-web.entrypoints=websecure"
+      - "traefik.http.routers.blog-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.blog-web.loadbalancer.server.port=5173"
+
+networks:
+  internal:
+  traefik-public:
+    external: true
+
+volumes:
+  postgres_data:
